@@ -1,0 +1,30 @@
+{
+  "name": "@aonuva/actori-integrations",
+  "version": "0.1.0",
+  "description": "Import existing MCP connections into Actori from Claude Code and Cursor",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "actori-import": "scripts/mcp-import.mjs",
+    "actori-setup": "scripts/install-setup-skill.mjs"
+  },
+  "files": [
+    "scripts/",
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/scripts/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aonuva/actori-integrations.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
