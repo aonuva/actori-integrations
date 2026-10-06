@@ -35,7 +35,7 @@ Use the existing importer for configuration changes; do not rewrite MCP JSON you
 1. Infer the client and project from the request and current session, not from the skill installation directory (Cursor can load `.claude/skills`). Ask only if ambiguous. Run `discover --client claude-code --project ABSOLUTE_PROJECT` (or `cursor`) and show a concise table of connection name, source/scope, compatibility, and required authorization. Discovery output is redacted; prefer it over reading the raw files.
 2. For “all my MCPs,” propose all supported entries in the intended scope and list the exclusions. Do not silently select another project's entries or claim that unsupported/cloud connections will migrate. If several scopes are involved, ask which to start with and explain the current limit before setup.
 3. Resolve repeated names using the exact file, scope, and case-sensitive server name. A duplicate name in unrelated projects does not itself mean the current client has an override. Plugin inventory requires explicitly supplied definition files and remains read-only.
-4. Confirm the target Actori UI origin, workspace, and selected connections unless already specified. Do not default a local trial to production. Explain the concrete scope of the proposed change and reuse the user's existing approval of that scope.
+4. Confirm the target Actori UI origin, account, and selected connections unless already specified. Do not default a local trial to production. Explain the concrete scope of the proposed change and reuse the user's existing approval of that scope.
 
 ## Prepare the import
 
@@ -56,7 +56,7 @@ Help complete browser setup with available browser tools or concise instructions
 
 - Connect the selected services. Provider OAuth requires consent for Actori; existing Claude/ChatGPT authorization is not transferred. Bearer credentials are entered privately in Actori, not pasted into chat.
 - Ask which tools should be available and their permissions. Propose a small read-only first task and approval for anything requiring review; do not equate “import all connections” with “allow all tools.” The user confirms tools, policies, and approver in Actori.
-- Confirm preparation, then enable client sign-in. Review the shared agent shown by the browser and confirm the added access. If that agent changes or is suspended, refresh and stop for review; do not alter unrelated agents to make setup pass.
+- Save access on the guided page; it may enable client sign-in together. If a separate enable button is shown, use it after preparation. Review the shared agent shown by the browser and confirm the added access. If that agent changes or is suspended, refresh and stop for review; do not alter unrelated agents to make setup pass.
 
 For Claude Code with OAuth and URL-only HTTP definitions, run `finish --session PRIVATE_DIR/session.json --native-client` to verify. For other configurations, omit `--native-client` to verify metadata and tool discovery and obtain the preview. For OAuth, the endpoint must match the deployment's configured resource URL; do not substitute a localhost override to bypass a mismatch.
 
@@ -78,7 +78,7 @@ After restart:
 
 - Claude Code: guide `/mcp` → `actori` → Authenticate, or `claude mcp login actori` when the project connection is approved.
 - Cursor CLI: use `cursor-agent mcp enable actori`, then `cursor-agent mcp login actori`; desktop users can authorize in MCP settings.
-- Sign in as the imported agent's owner in the intended workspace. This is separate from authorizing the upstream service.
+- Sign in as the imported agent's owner in the intended account. This is separate from authorizing the upstream service.
 - Use the exact final Actori tool mapping for the user-selected read operation; do not let another direct/cloud connector make the test appear successful.
 - For approval, show the approval link. Once the user approves, check approval status and retrieve the completed result without submitting the original operation again. Test denial only on a user-authorized read-only operation with an explicit deny policy.
 - Verify a subsequent normal launch works without `ACTORI_AGENT_TOKEN` or the importer wrapper. Do not read client OAuth caches to prove this.
@@ -102,3 +102,5 @@ On a resume request, use the private session path already recorded or ask for it
 On a restore request, preview `rollback --backup PRIVATE_DIR/rollback.json`. For a native Claude receipt, apply the authorized rollback yourself and ask for a restart afterward. For other receipts, stop the affected client before applying, using an explicit handoff when running inside it. Apply rollback only to that receipt; if concurrent edits conflict, report the conflict and do not force-overwrite it.
 
 Restoring local routing does not delete Actori resources or revoke client OAuth. Explain separate cleanup if requested. Keep receipts until restoration is verified; never delete the only recovery record during setup.
+
+The guided import page resumes saved setup and shows approval/execution progress. Its first approved result milestone is distinct from enforcement verification. Never resubmit a pending or completed operation to advance that page.

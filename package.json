@@ -1,6 +1,6 @@
 {
   "name": "@aonuva/actori-integrations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Import existing MCP connections into Actori from Claude Code and Cursor",
   "type": "module",
   "engines": {

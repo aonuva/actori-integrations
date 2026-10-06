@@ -9,7 +9,7 @@ Requires Node.js 22+ and a compatible Actori deployment with the MCP import APIs
 Install a pinned release (no source checkout needed):
 
 ```sh
-npx --yes --package=https://github.com/aonuva/actori-integrations/releases/download/v0.1.0/aonuva-actori-integrations-0.1.0.tgz actori-setup --client claude-code
+npx --yes --package=https://github.com/aonuva/actori-integrations/releases/download/v0.1.1/aonuva-actori-integrations-0.1.1.tgz actori-setup --client claude-code
 ```
 
 For Cursor, replace `claude-code` with `cursor`. Restart your client after installation. The installer copies the runtime into your personal skill directory so it keeps working after npm's cache is cleared. It refuses to overwrite an existing skill. Installation does not change MCP connections.

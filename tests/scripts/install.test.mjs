@@ -15,5 +15,5 @@ for (const client of ['claude-code', 'cursor']) test(`durable ${client} installa
   await rm(root,{recursive:true})
   const skill=join(home,client==='cursor'?'.cursor':'.claude','skills/setup-actori')
   assert.match(execFileSync(process.execPath,[join(skill,'scripts/import.mjs'),'--help'],{env,encoding:'utf8'}),/Actori MCP/)
-  assert.equal(JSON.parse(await readFile(join(skill,'installation.json'),'utf8')).version,'0.1.0')
+  assert.equal(JSON.parse(await readFile(join(skill,'installation.json'),'utf8')).version,'0.1.1')
 })
