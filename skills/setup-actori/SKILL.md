@@ -1,6 +1,6 @@
 ---
 name: setup-actori
-description: Set up Actori for existing Claude Code or Cursor MCP connections. Use when a user asks to set up Actori, move their MCPs behind Actori, select services to import, resume onboarding, or restore an Actori import.
+description: Set up Actori for existing Claude Code or Cursor MCP connections. Use when a user asks to set up Actori, move their MCPs behind Actori, select services to import, resume onboarding, diagnose Actori connection or permission problems, or restore an Actori import.
 ---
 
 # Set up Actori
@@ -36,6 +36,12 @@ Use the existing importer for configuration changes; do not rewrite MCP JSON you
 2. For “all my MCPs,” propose all supported entries in the intended scope and list the exclusions. Do not silently select another project's entries or claim that unsupported/cloud connections will migrate. If several scopes are involved, ask which to start with and explain the current limit before setup.
 3. Resolve repeated names using the exact file, scope, and case-sensitive server name. A duplicate name in unrelated projects does not itself mean the current client has an override. Plugin inventory requires explicitly supplied definition files and remains read-only.
 4. Confirm the target Actori UI origin, account, and selected connections unless already specified. Do not default a local trial to production. Explain the concrete scope of the proposed change and reuse the user's existing approval of that scope.
+
+## Optional Actori connector diagnostics
+
+When setup is blocked or the user asks why a tool is missing, inspect the current client's live tool inventory. If Actori management tools are already available, use the [Actori connector guide](references/actori-connector.md) for targeted read-only diagnosis. Match the actual advertised tool names and schemas; do not assume a prefix or install/grant management tools automatically.
+
+Use only the same Actori deployment and Account as this import. If that cannot be established from the known connection and setup context, stay with importer `status` and the browser. Absence of these tools is normal during first-time setup and must not block onboarding. They complement the importer; they cannot replace local discovery, pairing, access review, configuration updates, or rollback.
 
 ## Prepare the import
 
@@ -97,7 +103,7 @@ Report completion by scope: connected services, observed task/approval results, 
 
 ## Resume and rollback
 
-On a resume request, use the private session path already recorded or ask for it; do not create a duplicate import. Use `status`. If pairing expired, run `resume`, complete the new browser pairing, and run `status` again. Retry interrupted provider consent in the same import so other connected services are retained.
+On a resume request, use the private session path already recorded or ask for it; do not create a duplicate import. Use `status`. If pairing expired, run `resume`, complete the new browser pairing, and run `status` again. Retry interrupted provider consent in the same import so other connected services are retained. If the failure remains unclear and management tools are available, use the optional diagnostics above; do not create a second connector or import to hide the failure.
 
 On a restore request, preview `rollback --backup PRIVATE_DIR/rollback.json`. For a native Claude receipt, apply the authorized rollback yourself and ask for a restart afterward. For other receipts, stop the affected client before applying, using an explicit handoff when running inside it. Apply rollback only to that receipt; if concurrent edits conflict, report the conflict and do not force-overwrite it.
 
