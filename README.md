@@ -25,6 +25,12 @@ For Cursor, replace `claude-code` with `cursor`. Restart your client after insta
 7. Restart normally and authenticate Actori in the client's MCP settings. Call the selected tool once, approve in Actori, and retrieve the result of the same request without resubmitting.
 8. Review alternate direct connections/plugins. Test rejection or an explicit deny policy separately. Actori governs calls routed through it; it does not sandbox shell or network access.
 
+## Optional Actori connector assistance
+
+When your client already has access to Actori management tools, setup-actori can check connection status, inspect the selected agent's permissions and policies, and explain a stuck approval or execution. It uses narrowly scoped reads against the same deployment and Account as the import.
+
+This is optional: first-time setup still uses the importer and browser. The skill does not automatically enable management access, create duplicate connectors, change grants, or approve requests. Provider consent and secrets stay in the browser. See the [diagnostic guide](skills/setup-actori/references/actori-connector.md).
+
 ## Recovery and removal
 
 Ask setup-actori to resume using the saved session path. Expired pairing can be renewed with `resume`; reconnect providers in the same import. Sessions and receipts default to `~/.actori/imports/` and must remain private.
