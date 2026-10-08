@@ -9,17 +9,33 @@ This revision uses the existing Actori connector and native client OAuth. It
 needs no new importer API, pairing credential or token launcher. It replaces the
 unreleased app-side session mechanism used by the older v0.1.1 package.
 
-From this source checkout, install once:
+## Install from the GitHub release
+
+Run from **any directory** with Node.js 22+ installed. Choose your client:
+
+**Claude Code**
 
 ```sh
-node scripts/install-setup-skill.mjs --client claude-code
-# or --client cursor
+npx --yes --package=https://github.com/aonuva/actori-integrations/releases/download/v0.2.0/aonuva-actori-integrations-0.2.0.tgz actori-setup --client claude-code
 ```
 
-The installer copies the skill and runtime into your personal skill directory;
-the checkout can then be removed. It refuses to overwrite an existing skill:
-move the old skill aside first, keeping rollback receipts. This version has not
-yet been published as a release; do not use the v0.1.1 tarball for this flow.
+**Cursor**
+
+```sh
+npx --yes --package=https://github.com/aonuva/actori-integrations/releases/download/v0.2.0/aonuva-actori-integrations-0.2.0.tgz actori-setup --client cursor
+```
+
+This downloads the versioned package from GitHub, not the npm registry. The
+installer copies the skill and runtime into your personal skill directory and
+does not change MCP connections. No repository checkout is needed.
+
+If `setup-actori` already exists, the installer stops without overwriting it.
+Keep the current installation if it is 0.2.0; otherwise move that skill directory
+aside before reinstalling. Keep any rollback receipts. The old v0.1.1 session
+flow is incompatible with connector-based setup.
+
+For source development, run `node scripts/install-setup-skill.mjs --client
+claude-code` (or `cursor`) from this repository instead.
 
 Restart the client and ask:
 
