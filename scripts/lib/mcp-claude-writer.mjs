@@ -48,8 +48,8 @@ export async function claudeWriter(receipt) {
   return {
     async apply() {
       const initial = await check()
-      if (Object.hasOwn(initial, receipt.target) || Object.entries(receipt.original).some(([n,e]) => !same(initial[n],e))) throw new Error('Selected configuration changed before switch; nothing was changed by this attempt.')
-      await run(['add-json', '--scope', scope, '--', receipt.target, JSON.stringify(receipt.installed)])
+      if ((!receipt.previousTarget && Object.hasOwn(initial, receipt.target)) || Object.entries(receipt.original).some(([n,e]) => !same(initial[n],e))) throw new Error('Selected configuration changed before switch; nothing was changed by this attempt.')
+      if (!receipt.previousTarget) await run(['add-json', '--scope', scope, '--', receipt.target, JSON.stringify(receipt.installed)])
       for (const name of Object.keys(receipt.original)) {
         const servers = await check()
         if (!same(servers[receipt.target], receipt.installed)) throw new Error('Actori connection disappeared during switch; use the rollback receipt.')
@@ -60,7 +60,7 @@ export async function claudeWriter(receipt) {
     },
     async rollback(apply) {
       let servers = await check()
-      const restored = () => !Object.hasOwn(servers, receipt.target) && Object.entries(receipt.original).every(([n,e]) => same(servers[n],e))
+      const restored = () => (receipt.previousTarget ? same(servers[receipt.target], receipt.installed) : !Object.hasOwn(servers, receipt.target)) && Object.entries(receipt.original).every(([n,e]) => same(servers[n],e))
       if (restored()) return { restored: true, already_original: true }
       if (apply) {
         for (const [name, entry] of Object.entries(receipt.original)) {
@@ -68,7 +68,7 @@ export async function claudeWriter(receipt) {
           if (!Object.hasOwn(servers, name)) await run(['add-json', '--scope', scope, '--', name, JSON.stringify(entry)])
         }
         servers = await check()
-        if (Object.hasOwn(servers, receipt.target)) await run(['remove', '--scope', scope, '--', receipt.target])
+        if (!receipt.previousTarget && Object.hasOwn(servers, receipt.target)) await run(['remove', '--scope', scope, '--', receipt.target])
         servers = await check()
         if (!restored()) throw new Error('Claude rollback verification failed; retain the receipt and inspect the selected scope.')
       }

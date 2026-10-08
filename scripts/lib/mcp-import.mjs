@@ -48,6 +48,19 @@ export async function scanFile(path, client = 'claude-code') {
   return connectionInventory(config, client)
 }
 
+/** Selected endpoint details only; never return headers, credential variables or unrelated entries. */
+export async function planConnections({ path, client, names, project = null }) {
+  const { config } = await readConfigFile(path)
+  const servers = clientAdapter(client).servers(config, project)
+  if (!Array.isArray(names) || !names.length || names.length > 20 || new Set(names).size !== names.length) throw new Error('Select 1–20 distinct connections.')
+  return { client, project, connections: names.map(name => {
+    if (!servers || !Object.hasOwn(servers, name)) throw new Error('Selected connection is missing.')
+    const c = remoteConnection(servers[name], client)
+    if (c.status === 'unsupported') throw new Error(c.reason)
+    return { name, endpoint: c.endpoint, auth: c.auth }
+  }) }
+}
+
 async function replaceFile(path, before, config, mode) {
   const temporary = `${path}.actori-${randomUUID()}.tmp`
   try {
@@ -76,7 +89,7 @@ export async function switchConnections({ path, names, project = null, client = 
   const { text, config, mode } = await readConfigFile(path)
   const servers = adapter.servers(config, project)
   if (!object(servers)) throw new Error('Configuration scope not found.')
-  if (own(servers, target) && !names.includes(target)) throw new Error('The Actori connection name is already in use; choose another name.')
+
   const original = Object.fromEntries(names.map(name => {
     if (!own(servers, name) || remoteConnection(servers[name], client).status === 'unsupported') throw new Error('Selected connection is missing or unsupported; scan again.')
     return [name, servers[name]]
@@ -84,9 +97,11 @@ export async function switchConnections({ path, names, project = null, client = 
   if (!['oauth', 'bearer'].includes(authentication)) throw new Error('Choose oauth or bearer authentication.')
   if (authentication === 'bearer') replacement(endpoint, tokenEnv)
   const installed = adapter.connection(actorEndpoint(endpoint), tokenEnv, authentication)
+  const previousTarget = own(servers, target) && !names.includes(target) ? servers[target] : undefined
+  if (previousTarget && digest(previousTarget) !== digest(installed)) throw new Error('The Actori connection name is already in use with different settings.')
   const plan = { client, project, servers: names, target, endpoint: installed.url, authentication, ...(authentication === 'bearer' ? { token_env: tokenEnv } : {}), applied: false,
     warnings: ['Restart the client after switching. Other scopes and plugin/cloud routes may remain direct.', 'Verify Actori discovery and permissions before applying; this command only changes configuration.'] }
-  const receipt = { version: 2, path, client, project, target, original, installed, digest: digest(installed), ...(nativeClient ? { writer: 'claude' } : {}) }
+  const receipt = { version: 2, path, client, project, target, original, installed, ...(previousTarget ? { previousTarget } : {}), digest: digest(installed), ...(nativeClient ? { writer: 'claude' } : {}) }
   const writer = nativeClient ? await claudeWriter(receipt) : null
   if (writer) plan.configuration_writer = 'claude'
   if (!apply) return plan
@@ -107,6 +122,7 @@ async function rollbackGroup(receipt, apply) {
   if (typeof receipt.path !== 'string' || !object(receipt.original) || !Object.keys(receipt.original).length
     || typeof receipt.target !== 'string' || !(receipt.project === null || typeof receipt.project === 'string')
     || !object(receipt.installed) || receipt.digest !== digest(receipt.installed)) throw new Error('Invalid rollback receipt.')
+  if (receipt.previousTarget && digest(receipt.previousTarget) !== receipt.digest) throw new Error('Invalid existing Actori entry in receipt.')
   if (receipt.writer === 'claude') return (await claudeWriter(receipt)).rollback(apply)
   const adapter = clientAdapter(receipt.client)
   const { text, config, mode } = await readConfigFile(receipt.path)
@@ -114,11 +130,11 @@ async function rollbackGroup(receipt, apply) {
   if (!object(servers)) throw new Error('Configuration scope no longer exists.')
   const names = Object.keys(receipt.original)
   if (names.every(n => own(servers, n) && digest(servers[n]) === digest(receipt.original[n]))
-    && (names.includes(receipt.target) || !own(servers, receipt.target))) return { restored: true, already_original: true }
+    && (receipt.previousTarget ? own(servers, receipt.target) && digest(servers[receipt.target]) === receipt.digest : names.includes(receipt.target) || !own(servers, receipt.target))) return { restored: true, already_original: true }
   if (!own(servers, receipt.target) || digest(servers[receipt.target]) !== receipt.digest
     || names.some(n => n !== receipt.target && own(servers, n))) throw new Error('Selected connections changed since switching; refusing to overwrite them.')
   if (apply) {
-    delete servers[receipt.target]
+    if (!receipt.previousTarget) delete servers[receipt.target]
     for (const [name, entry] of Object.entries(receipt.original)) Object.defineProperty(servers, name, { value: entry, enumerable: true, configurable: true, writable: true })
     await replaceFile(receipt.path, text, config, mode)
   }

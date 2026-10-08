@@ -1,50 +1,70 @@
 # Actori integrations
 
-Bring existing Claude Code or Cursor remote MCP connections into Actori, with reviewed tool permissions, human approvals, and reversible configuration changes. Provider-independent; no service credentials are copied from client configuration.
+Open-source local MCP discovery, reversible client configuration, and the
+`setup-actori` skill for Claude Code and Cursor. Node.js 22+, MIT licensed.
 
-## Install
+## Connector-based setup (0.2)
 
-Requires Node.js 22+ and a compatible Actori deployment with the MCP import APIs and client OAuth enabled. The initial release targets the importer API introduced by actori-app PR #28; older deployments may not support it.
+This revision uses the existing Actori connector and native client OAuth. It
+needs no new importer API, pairing credential or token launcher. It replaces the
+unreleased app-side session mechanism used by the older v0.1.1 package.
 
-Install a pinned release (no source checkout needed):
+From this source checkout, install once:
 
 ```sh
-npx --yes --package=https://github.com/aonuva/actori-integrations/releases/download/v0.1.1/aonuva-actori-integrations-0.1.1.tgz actori-setup --client claude-code
+node scripts/install-setup-skill.mjs --client claude-code
+# or --client cursor
 ```
 
-For Cursor, replace `claude-code` with `cursor`. Restart your client after installation. The installer copies the runtime into your personal skill directory so it keeps working after npm's cache is cleared. It refuses to overwrite an existing skill. Installation does not change MCP connections.
+The installer copies the skill and runtime into your personal skill directory;
+the checkout can then be removed. It refuses to overwrite an existing skill:
+move the old skill aside first, keeping rollback receipts. This version has not
+yet been published as a release; do not use the v0.1.1 tarball for this flow.
 
-## First governed task
+Restart the client and ask:
 
-1. Open your project in Claude Code or Cursor and ask: “Use setup-actori to connect this project to Actori at MY_ACTORI_URL. Discover connections and let me choose before changing anything.” Replace the URL with your Actori dashboard origin.
-2. Select a supported service and review the exact file and scope. User-level configuration affects other projects.
-3. Open the pairing link, match the code, sign in, and authorize the importer. Tell the agent when pairing is complete so it uploads the selected endpoints.
-4. Connect the service in Actori. OAuth requires new provider consent; bearer credentials belong in the browser, never chat. Select a read-only tool requiring approval and a role you belong to as approver.
-5. Review shared access: repeated imports reuse your existing Actori agent, and added permissions apply to every client using it. Same-service imports currently create separate connectors/tool names.
-6. Approve the configuration preview. Claude can use native configuration commands; Cursor requires quitting affected sessions and running the supplied apply command externally. Keep the rollback receipt.
-7. Restart normally and authenticate Actori in the client's MCP settings. Call the selected tool once, approve in Actori, and retrieve the result of the same request without resubmitting.
-8. Review alternate direct connections/plugins. Test rejection or an explicit deny policy separately. Actori governs calls routed through it; it does not sandbox shell or network access.
+> Use setup-actori to connect this project to Actori at MY_CONSOLE_URL. Discover
+> my MCP connections, explain which are supported, and let me choose. Start with
+> one service and one read-only task requiring approval.
 
-## Optional Actori connector assistance
+The skill guides the human through initial Actori OAuth and management-tool
+grants, then uses `add_connector` and `sync_connector_tools`. Provider consent,
+API tokens, tool selection, policies and approvers stay in the existing console.
+Agents cannot widen their own access. All clients on one agent share its grants.
 
-When your client already has access to Actori management tools, setup-actori can check connection status, inspect the selected agent's permissions and policies, and explain a stuck approval or execution. It uses narrowly scoped reads against the same deployment and Account as the import.
+## Local commands
 
-This is optional: first-time setup still uses the importer and browser. The skill does not automatically enable management access, create duplicate connectors, change grants, or approve requests. Provider consent and secrets stay in the browser. See the [diagnostic guide](skills/setup-actori/references/actori-connector.md).
+```sh
+node scripts/mcp-import.mjs discover --client claude-code --project /absolute/project
+node scripts/mcp-import.mjs switch --client claude-code --config /absolute/project/.mcp.json \
+  --server docs --endpoint https://YOUR_ACTORI_AGENT_HOST/mcp --native-client
+```
 
-## Recovery and removal
+After live Actori tool discovery and review, repeat with `--apply`. Cursor and
+non-native file writes require closing affected client sessions first. Apply
+prints a private durable rollback receipt. It edits only the selected scope,
+keeps unrelated entries, and preserves an identical pre-existing Actori entry.
+It does not verify server access or transfer credentials.
 
-Ask setup-actori to resume using the saved session path. Expired pairing can be renewed with `resume`; reconnect providers in the same import. Sessions and receipts default to `~/.actori/imports/` and must remain private.
+```sh
+node scripts/mcp-import.mjs rollback --backup /private/path/rollback.json
+# After reviewing the preview, repeat with --apply.
+```
 
-Ask the skill to preview and apply rollback using the saved receipt. Stop affected clients for non-native writes, then restart. Rollback restores selected entries only; conflicts stop rather than overwrite unrelated edits. It does not remove server-side grants or provider consent, which may be shared by other clients.
+Version-2 receipts from 0.1 remain supported. Retired session commands fail with
+an explanation; keep the old release only if finishing an old isolated trial.
+Local rollback does not delete shared Actori resources or revoke consent.
 
-To uninstall the skill, first finish or roll back active imports, then remove only the installed `setup-actori` directory under `~/.claude/skills/` or `~/.cursor/skills/`. Retain receipts until restoration is verified. Upgrades currently require moving the old skill aside and installing the new pinned release.
+## Boundaries and checks
 
-## Supported scope
+Supported: remote HTTPS Streamable HTTP definitions, browser-authorized services
+and bearer credentials entered separately in Actori. Unknown OAuth services need
+a supported OAuth catalog entry. Local processes, custom headers, cloud plugins,
+resources and prompts are not automatically migrated. Review alternate direct
+routes; the configuration audit cannot certify network isolation.
 
-Remote HTTPS Streamable HTTP tools in Claude Code and Cursor. Provider OAuth discovery, unauthenticated endpoints, and separately supplied bearer tokens are supported. Local-process MCPs, arbitrary custom headers, cloud connectors, resources/prompts, and plugin behavior are not migrated. Existing credentials are not transferred. Separate Actori agents through the same human OAuth identity remain a server-side limitation.
-
-## Development
-
-No runtime dependencies. Run `npm test`; run `npm pack` to build the distributable. CLI: `node scripts/mcp-import.mjs --help`. Tests use temporary configurations and mock services; they do not need your accounts.
-
-Report issues here without tokens, session files, receipts, or raw personal configuration. Core UI, provider credential storage, permissions, and approval enforcement remain in Actori's app repository.
+`npm test` covers discovery/redaction, scope-preserving writes, native Claude
+commands, receipts/rollback, and durable skill installation using isolated files.
+Live connector bootstrap, provider consent, grants and client execution must be
+verified against a configured Actori deployment. Old session-flow UAT does not
+establish this revised flow's end-to-end acceptance.
