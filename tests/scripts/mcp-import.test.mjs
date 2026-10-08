@@ -168,3 +168,19 @@ test('Claude remote entries require explicit transport while Cursor can infer HT
   assert.equal(remoteConnection({ url: docs.url }, 'claude-code').status, 'unsupported')
   assert.equal(remoteConnection({ url: docs.url }, 'cursor').status, 'setup_required')
 })
+
+test('existing bootstrap connection survives cutover and rollback', async t => {
+  const f = await fixture(t, { mcpServers: { notion, actori: { type: 'http', url: endpoint } } })
+  await switchConnections({ ...f, names: ['notion'], authentication: 'oauth', apply: true })
+  await rollbackConnection(f.backup, true)
+  const servers = JSON.parse(await readFile(f.path, 'utf8')).mcpServers
+  assert.deepEqual(servers, { actori: { type: 'http', url: endpoint }, notion })
+  assert.equal((await rollbackConnection(f.backup, true)).already_original, true)
+})
+
+test('selected connector plan omits credentials and unrelated definitions', async t => {
+  const f = await fixture(t, { mcpServers: { selected: { type: 'http', url: 'https://example.test/mcp', headers: { Authorization: 'Bearer private-token' } }, other: notion } })
+  const result = JSON.parse(execFileSync(process.execPath, ['scripts/mcp-import.mjs', 'plan', '--client', 'claude-code', '--config', f.path, '--server', 'selected'], { encoding: 'utf8' }))
+  assert.deepEqual(result.connections, [{ name: 'selected', endpoint: 'https://example.test/mcp', auth: 'bearer' }])
+  assert.doesNotMatch(JSON.stringify(result), /private-token|notion/)
+})

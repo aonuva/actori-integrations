@@ -76,3 +76,13 @@ test('native preview rejects credential-bearing definitions and arbitrary files'
   await assert.rejects(switchConnections({...f,path:other}),/actual user config/)
   assert.equal((await f.read()).sessionWrites,undefined)
 })
+
+test('native cutover and rollback keep an existing Actori bootstrap entry', async t => {
+  const f = await fixture(t)
+  await f.edit(c => { c.mcpServers.actori = { type: 'http', url: f.endpoint } })
+  await switchConnections({ ...f, apply: true })
+  await rollbackConnection(f.backup, true)
+  assert.deepEqual((await f.read()).mcpServers.actori, { type: 'http', url: f.endpoint })
+  assert.ok((await f.read()).mcpServers.notion)
+  assert.equal((await f.read()).sessionWrites, 2)
+})

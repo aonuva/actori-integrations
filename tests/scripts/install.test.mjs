@@ -15,7 +15,7 @@ for (const client of ['claude-code', 'cursor']) test(`durable ${client} installa
   await rm(root,{recursive:true})
   const skill=join(home,client==='cursor'?'.cursor':'.claude','skills/setup-actori')
   assert.match(execFileSync(process.execPath,[join(skill,'scripts/import.mjs'),'--help'],{env,encoding:'utf8'}),/Actori MCP/)
-  assert.equal(JSON.parse(await readFile(join(skill,'installation.json'),'utf8')).version,'0.1.1')
+  assert.equal(JSON.parse(await readFile(join(skill,'installation.json'),'utf8')).version,'0.2.0')
   // Referenced guidance must survive standalone installation with the runtime.
   const instructions = await readFile(join(skill, 'SKILL.md'), 'utf8')
   const references = [...instructions.matchAll(/\]\((references\/[^)]+)\)/g)].map(m => m[1])
