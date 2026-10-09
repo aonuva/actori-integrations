@@ -9,7 +9,7 @@ Use only management tools present in the live client, in the intended deployment
 | Add non-secret connection | `add_connector`; human finishes OAuth at returned console URL |
 | API key / credential | Human creates or edits the connector in the console; no secrets in MCP arguments |
 | Discover provider tools | `sync_connector_tools` after consent |
-| Select tools and access | Human uses existing connector bulk-add / GrantAndProtect screen |
+| Select tools and access | Human selects tools and agent role in connector bulk-add, then configures approval policy and approver role on each action |
 | Diagnose missing access | `get_agent_permissions`, `list_actions`, `get_action`, `list_action_policies`, `list_roles`, `list_grants` as available |
 | Pending/failed execution | `get_approval`, `get_execution`; fetch the original result via `check_approval_status` |
 
